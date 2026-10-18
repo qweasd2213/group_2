@@ -1,0 +1,5 @@
+Image,Execution_time_s,CPU_percent,Max_RSS_kB
+im1,0.42,99,21196
+im2,0.84,99,29432
+im3,1.56,99,41144
+im4,7.24,99,137628
