@@ -9,10 +9,10 @@ Author: David Holmqvist <daae19@student.bth.se>
 #if !defined(DATASET_HPP)
 #define DATASET_HPP
 
-namespace Dataset
-{
-    std::vector<Vector> read(std::string filename);
-    void write(std::vector<double> data, std::string filename);
-};
+namespace Dataset {
+// Takes result as a reference, removes need of copy on return.
+std::vector<Vector> read(const std::string &filename);
+void write(const std::vector<double> &data, const std::string &filename);
+}; // namespace Dataset
 
 #endif
