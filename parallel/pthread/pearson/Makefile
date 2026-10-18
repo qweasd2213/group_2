@@ -1,14 +1,14 @@
 # Author: David Holmqvist <daae19@student.bth.se>
 
 CXX=g++-13
-CXXFLAGS=-std=c++17 -g -Wunused -Wall -Wunused
+CXXFLAGS=-std=c++17 -O3 -pthread -g -Wunused -Wall -Wunused 
 
 all: pearson verify
 
-pearson: vector dataset analysis pearson.cpp 
-	$(CXX) $(CXXFLAGS) pearson.cpp vector.o dataset.o analysis.o -o pearson
+pearson: threadpool vector dataset analysis pearson.cpp 
+	$(CXX) $(CXXFLAGS) pearson.cpp task.o threadpool.o  vector.o dataset.o analysis.o -o pearson_par
 
-analysis: vector analysis.hpp analysis.cpp
+analysis: threadpool vector analysis.hpp analysis.cpp
 	$(CXX) $(CXXFLAGS) -c analysis.cpp -o analysis.o
 
 dataset: vector dataset.hpp dataset.cpp
@@ -16,9 +16,11 @@ dataset: vector dataset.hpp dataset.cpp
 
 vector: vector.hpp vector.cpp
 	$(CXX) $(CXXFLAGS) -c vector.cpp -o vector.o
-
+threadpool: task threadpool.hpp threadpool.cpp
+	$(CXX) $(CXXFLAGS) -c threadpool.cpp -o threadpool.o
+task: task.hpp task.cpp
+	$(CXX) $(CXXFLAGS) -c task.cpp -o task.o
 verify: verify.c
 	$(CC) verify.c -o verify
-
 clean:
-	rm -rf verify pearson *.o *.dSYM 2> /dev/null
+	rm -rf verify pearson_par *.o *.dSYM 2> /dev/null
