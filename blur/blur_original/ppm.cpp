@@ -12,14 +12,21 @@ namespace PPM {
 
 void Reader::fill(std::string filename)
 {
-    std::ifstream f(filename, std::ios::binary);
+    std::ifstream f {};
+
+    f.open(filename);
 
     if (!f) {
         stream.setstate(std::ios::failbit);
         return;
     }
 
-    stream << f.rdbuf();
+    std::copy(
+        std::istreambuf_iterator<char> { f.rdbuf() },
+        std::istreambuf_iterator<char> {},
+        std::ostreambuf_iterator<char> { stream });
+
+    f.close();
 }
 
 std::string Reader::get_magic_number()
@@ -71,27 +78,25 @@ unsigned Reader::get_color_max()
 std::tuple<unsigned char*, unsigned char*, unsigned char*> Reader::get_data(unsigned x_size, unsigned y_size)
 {
     auto size { x_size * y_size };
-    auto bytes = size * 3;
+    auto R { new char[size] }, G { new char[size] }, B { new char[size] };
 
-    std::vector<unsigned char> raw(bytes);
-    stream.read(reinterpret_cast<char*>(raw.data()), static_cast<std::streamsize>(bytes));
+    for (auto i { 0 }, read { 0 }; i < size; i++, read = 0) {
+        stream.read(R + i, 1);
+        read += stream.gcount();
+        stream.read(G + i, 1);
+        read += stream.gcount();
+        stream.read(B + i, 1);
+        read += stream.gcount();
 
-    if (static_cast<std::size_t>(stream.gcount()) != bytes) {
-        return { nullptr, nullptr, nullptr };
+        if (read != 3) {
+            delete[] R;
+            delete[] G;
+            delete[] B;
+            return { nullptr, nullptr, nullptr };
+        }
     }
 
-    auto* R = new unsigned char[size];
-    auto* G = new unsigned char[size];
-    auto* B = new unsigned char[size];
-
-    const unsigned char* src = raw.data();
-    for (std::size_t i = 0; i < size; ++i) {
-        R[i] = src[3*i + 0];
-        G[i] = src[3*i + 1];
-        B[i] = src[3*i + 2];
-    }
-
-    return { R, G, B };
+    return { reinterpret_cast<unsigned char*>(R), reinterpret_cast<unsigned char*>(G), reinterpret_cast<unsigned char*>(B) };
 }
 
 Matrix Reader::operator()(std::string filename)
@@ -147,34 +152,33 @@ void error(std::string op, std::string what)
     std::cerr << "Encountered PPM error during " << op << ": " << what << std::endl;
 }
 
-void Writer::operator()(Matrix& m, std::string filename)
+void Writer::operator()(Matrix m, std::string filename)
 {
     try {
-        std::ofstream f {filename, std::ios::binary};
+        std::ofstream f {};
+
+        f.open(filename);
 
         if (!f) {
             throw std::runtime_error { "failed to open " + filename };
         }
 
         f << magic_number << std::endl;
+
         f << m.get_x_size() << " " << m.get_y_size() << std::endl;
         f << m.get_color_max() << std::endl;
 
         auto size { m.get_x_size() * m.get_y_size() };
+        auto R { m.get_R() }, G { m.get_G() }, B { m.get_B() };
+        auto it_R { R }, it_G { G }, it_B { B };
 
-        std::vector<unsigned char> payload(size * 3);
-        const unsigned char* R = m.get_R();
-        const unsigned char* G = m.get_G();
-        const unsigned char* B = m.get_B();
-        for (std::size_t i = 0; i < size; ++i) {
-            payload[3*i + 0] = R[i];
-            payload[3*i + 1] = G[i];
-            payload[3*i + 2] = B[i];
+        while (it_R < R + size && it_G < G + size && it_B < B + size) {
+            f << *it_R++
+              << *it_G++
+              << *it_B++;
         }
 
-        f.write(reinterpret_cast<const char*>(payload.data()),
-                static_cast<std::streamsize>(payload.size()));
-
+        f.close();
     } catch (std::runtime_error e) {
         error("writing", e.what());
     }

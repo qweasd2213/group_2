@@ -29,12 +29,12 @@ Matrix::Matrix()
 {
 }
 
-Matrix::Matrix(unsigned x_size, unsigned y_size)
-    : R { new unsigned char[x_size * y_size] }
-    , G { new unsigned char[x_size * y_size] }
-    , B { new unsigned char[x_size * y_size] }
-    , x_size { x_size }
-    , y_size { y_size }
+Matrix::Matrix(unsigned dimension)
+    : R { new unsigned char[dimension * dimension] }
+    , G { new unsigned char[dimension * dimension] }
+    , B { new unsigned char[dimension * dimension] }
+    , x_size { dimension }
+    , y_size { dimension }
     , color_max { 0 }
 {
 }
